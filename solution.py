@@ -10,9 +10,11 @@ def cross(A, B):
     return [s+t for s in A for t in B]
 
 boxes = cross(rows, cols)
-
+#get row units
 row_units = [cross(r, cols) for r in rows]
+#get column units
 column_units = [cross(rows, c) for c in cols]
+#get square units
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
 #get the main diagonal list
 main_diagonal_units = [ cross(r, cols[i])[0] for i, r in enumerate(rows)]
@@ -20,7 +22,9 @@ main_diagonal_units = [ cross(r, cols[i])[0] for i, r in enumerate(rows)]
 secondary_diagonal_units = [ cross(r, cols[8-i])[0] for i, r in enumerate(rows)]
 #combine both diagonal units
 diagonal_units = [main_diagonal_units , secondary_diagonal_units]
+#combine rows, columns, squares, and diagonals into one unitlist 
 unitlist = row_units + column_units + square_units + diagonal_units
+#covnert unitlist to a dictionary form
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
 
@@ -60,8 +64,16 @@ def naked_twins(values):
                 clear_naked_twins(values, unit, comb)
     return values
 
-#Clear all values from the unit that are in the combination variable 
 def clear_naked_twins(values, unit, comb):
+    """
+    Clear all values from the unit that are in the comb variable 
+    Args:
+        values(dict) - a dictionary of the form {'box_name': '123456789', ...}
+        unit(array) - an array of the form [A1, A2, A3, ...]
+        comb(string) - a two letter combination of '123456789' of the form '23'
+    Returns:
+        none
+    """
     for box in unit:
         #make sure we are not replacing the actual combination
         if comb != values[box]:
@@ -108,23 +120,51 @@ def display(values):
     return
 
 def eliminate(values):
+    """Eliminate values using the eliminate strategy. 
+    Args:
+        values(dict): a dictionary of the form {'box_name': '123456789', ...}
+
+    Returns:
+        the values dictionary with assigned values eliminated from peers.
+    """
+    #check for assigned values
     solved_values = [box for box in values.keys() if len(values[box]) == 1]
     for box in solved_values:
         digit = values[box]
+        #loop through all peers and replace the assigned value with a ""
         for peer in peers[box]:
             new_value = values[peer].replace(digit,'')
             assign_value(values, peer, new_value)
     return values
 
 def only_choice(values):
+    """Eliminate values using the only choice strategy. 
+    Args:
+        values(dict): a dictionary of the form {'box_name': '123456789', ...}
+
+    Returns:
+        the values dictionary with values assigned from only choice strategy.
+    """
+    #loop through unitlist
     for unit in unitlist:
         for digit in '123456789':
             dplaces = [box for box in unit if digit in values[box]]
+            #check for a uniqe number amongst the unit
             if len(dplaces) == 1:
+                #assign that unique number to the corresponding box
                 assign_value(values, dplaces[0], digit)
     return values
 
 def reduce_puzzle(values):
+    """
+    Try solving the sudoku puzzle using the eliminate and only choice strategies.
+    Check for any changes. If no changes found return. 
+    Args:
+        values(dict): a dictionary of the form {'box_name': '123456789', ...}
+
+    Returns:
+        the values dictionary with the new reduced puzzle
+    """
     solved_values = [box for box in values.keys() if len(values[box]) == 1]
     stalled = False
     while not stalled:
@@ -139,6 +179,13 @@ def reduce_puzzle(values):
     return values
 
 def search(values):
+    """Solve sudoku puzzle by tring different options of possible values
+    Args:
+        values(dict): a dictionary of the form {'box_name': '123456789', ...}
+
+    Returns:
+        the values dictionary the solved sudoku puzzle or false for cannot be solved
+    """
     sudoku = reduce_puzzle(values)
     if sudoku is False:
         return False;

@@ -1,3 +1,5 @@
+import itertools
+
 rows = 'ABCDEFGHI'
 cols = '123456789'
 
@@ -12,8 +14,11 @@ boxes = cross(rows, cols)
 row_units = [cross(r, cols) for r in rows]
 column_units = [cross(rows, c) for c in cols]
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
+#get the main diagonal list
 main_diagonal_units = [ cross(r, cols[i])[0] for i, r in enumerate(rows)]
+#get the secondary diagonal list
 secondary_diagonal_units = [ cross(r, cols[8-i])[0] for i, r in enumerate(rows)]
+#combine both diagonal units
 diagonal_units = [main_diagonal_units , secondary_diagonal_units]
 unitlist = row_units + column_units + square_units + diagonal_units
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
@@ -42,14 +47,30 @@ def naked_twins(values):
     Returns:
         the values dictionary with the naked twins eliminated from peers.
     """
+    #generate all 2 letter combinations that can be in boxes
+    twin_combos = [ comb[0]+comb[1] for comb in list(itertools.combinations('123456789', 2))]
+    #loop thorugh unitlist 
+    for unit in unitlist:
+        #check for each combination in the unit list
+        for comb in twin_combos:
+            dplaces = [box for box in unit if comb == values[box]]
+            #if there are 2 boxes with the same combination
+            if len(dplaces) == 2:
+                #clear the combination from all the other boxes in the unit
+                clear_naked_twins(values, unit, comb)
+    return values
 
-    # Find all instances of naked twins
-    # Eliminate the naked twins as possibilities for their peers
-    
-
-
-    
-
+#Clear all values from the unit that are in the combination variable 
+def clear_naked_twins(values, unit, comb):
+    for box in unit:
+        #make sure we are not replacing the actual combination
+        if comb != values[box]:
+            #clear all values from comb[0]
+            new_value = values[box].replace(comb[0], '')
+            #clear all values from comb[1]
+            new_value = new_value.replace(comb[1], '')
+            #assign a new value
+            assign_value(values, box, new_value)
 
 def grid_values(grid):
     """
@@ -110,12 +131,10 @@ def reduce_puzzle(values):
         solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
         values = eliminate(values)
         values = only_choice(values)
-        # values = naked_twins(values)
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
         stalled = solved_values_before == solved_values_after
 
         if len([box for box in values.keys() if len(values[box]) == 0]):
-            print ("Something is wrong")
             return False
     return values
 
@@ -156,7 +175,6 @@ if __name__ == '__main__':
 
     try:
         from visualize import visualize_assignments
-        print (assignments)
         visualize_assignments(assignments)
 
     except SystemExit:
